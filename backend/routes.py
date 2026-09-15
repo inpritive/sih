@@ -106,3 +106,5 @@ def initialize_database():
         return {"status": "success", "message": "Database initialized and seeded"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+        
+
