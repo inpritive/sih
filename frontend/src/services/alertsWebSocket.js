@@ -56,6 +56,13 @@ class AlertsWebSocketManager {
         this.status = 'connected';
         this.notifyStatus('connected');
         console.log('[WS] Connected to live alerts at', config.WS_BASE_URL);
+
+        // Render kills idle websockets after 55s. Keep it alive with a ping.
+        this.pingInterval = setInterval(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send('ping');
+          }
+        }, 30000);
       };
 
       this.ws.onmessage = (event) => {
@@ -68,6 +75,10 @@ class AlertsWebSocketManager {
       };
 
       this.ws.onclose = () => {
+        if (this.pingInterval) {
+          clearInterval(this.pingInterval);
+          this.pingInterval = null;
+        }
         this.isConnected = false;
         this.status = 'disconnected';
         this.notifyStatus('disconnected');
@@ -138,6 +149,7 @@ class AlertsWebSocketManager {
       this.mockWs = null;
     }
     if (this.ws) {
+      if (this.pingInterval) clearInterval(this.pingInterval);
       this.ws.close();
       this.ws = null;
     }
