@@ -95,3 +95,14 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@router.get("/init-db")
+def initialize_database():
+    import init_db
+    import seed_db
+    try:
+        init_db.init()
+        seed_db.seed()
+        return {"status": "success", "message": "Database initialized and seeded"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

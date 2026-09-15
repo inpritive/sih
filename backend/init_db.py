@@ -1,6 +1,6 @@
 from sqlalchemy import text
-from .database import engine
-from . import models
+from database import engine
+import models
 
 def init():
     with engine.connect() as conn:
