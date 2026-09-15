@@ -25,8 +25,8 @@ const getInitialMockState = () => {
 
 export const config = {
   USE_MOCK: getInitialMockState(),
-  API_BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-  WS_BASE_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:8000/alerts',
+  API_BASE_URL: 'https://sih-gvvh.onrender.com',
+  WS_BASE_URL: 'wss://sih-gvvh.onrender.com/alerts',
 };
 
 export const setMockMode = (useMock) => {

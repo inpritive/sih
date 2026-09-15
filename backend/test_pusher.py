@@ -3,7 +3,7 @@ import json
 import time
 from datetime import datetime, timezone
 
-API_URL = "http://localhost:8000/sighting"
+API_URL = "https://sih-gvvh.onrender.com/sighting"
 
 # The three plates we blacklisted in seed_db.py
 test_sightings = [
