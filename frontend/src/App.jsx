@@ -67,6 +67,11 @@ export function App() {
     return () => clearInterval(interval);
   }, [loadCameras, loadAnalytics]);
 
+  const activeTabRef = React.useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
   // 2. Connect to Live WebSocket on mount
   useEffect(() => {
     alertsWs.init();
@@ -75,7 +80,7 @@ export function App() {
       setAlerts((prev) => [newAlert, ...prev]);
 
       // If user is not on alerts tab, increment counter & display floating toast
-      if (activeTab !== 'alerts') {
+      if (activeTabRef.current !== 'alerts') {
         setUnreadAlerts((prev) => prev + 1);
         setLatestFloatingAlert(newAlert);
 
@@ -90,7 +95,7 @@ export function App() {
       unsubscribe();
       alertsWs.cleanup();
     };
-  }, [activeTab]);
+  }, []);
 
   // Reset unread count when viewing alerts tab
   const handleTabChange = (tab) => {

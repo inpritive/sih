@@ -3,7 +3,7 @@ import websockets
 import json
 
 async def listen_for_alerts():
-    uri = "ws://localhost:8000/alerts"
+    uri = "wss://sih-gvvh.onrender.com/alerts"
     print(f"Connecting to {uri}...")
     try:
         async with websockets.connect(uri) as websocket:
