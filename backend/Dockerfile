@@ -4,23 +4,13 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies required by OpenCV and PostGIS extensions
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the lightweight API requirements
+COPY requirements-api.txt .
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Install only the API dependencies (FastAPI, SQLAlchemy, etc.)
+RUN pip install --no-cache-dir -r requirements-api.txt
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the current directory contents into the container at /app
+# Copy the current directory contents into the container
 COPY . .
 
 # Expose port 8000 for the FastAPI server

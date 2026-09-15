@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+geoalchemy2
+psycopg2-binary
+alembic
+websockets
+python-Levenshtein
+pydantic

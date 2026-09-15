@@ -1,0 +1,5 @@
+ultralytics
+easyocr
+paddleocr
+opencv-python
+numpy

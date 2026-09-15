@@ -4,7 +4,7 @@ services:
     name: anpr-backend
     env: docker
     region: singapore # Change to your preferred region (e.g., frankfurt, ohio)
-    plan: standard # Minimum required for ML libraries like PyTorch/YOLO
+    plan: free # Changed to free!
     dockerfilePath: ./backend/Dockerfile
     envVars:
       - key: DATABASE_URL
