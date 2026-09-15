@@ -1,0 +1,26 @@
+POST /sighting
+Body: { "plate": "KA01AB1234", "camera_id": "cam_1", "timestamp": "2026-09-15T10:30:45Z",
+        "confidence": 0.92, "vehicle_type": "car", "color": "white" }
+
+GET /cameras
+Response: [{ "id": "cam_1", "name": "MG Road Junction", "lat": 12.9716, "lng": 77.5946 }, ...]
+
+GET /plate/{plate}/trajectory
+Response: { "plate": "KA01AB1234", "sightings": [
+  { "camera_id": "cam_1", "lat": 12.9716, "lng": 77.5946, "timestamp": "...", "confidence": 0.92 },
+  { "camera_id": "cam_2", "lat": 12.9352, "lng": 77.6146, "timestamp": "...", "confidence": 0.88 }
+]}
+
+GET /analytics/summary
+Response: {
+  "vehicle_counts_by_camera": { "cam_1": 120, "cam_2": 95, "cam_3": 140 },
+  "density_grid": [{ "lat": 12.97, "lng": 77.59, "count": 34 }, ...],
+  "congestion_score": { "cam_1": 0.6, "cam_2": 0.3 }
+}
+
+POST /blacklist
+Body: { "plate": "KA01AB1234", "reason": "stolen vehicle" }
+
+WS /alerts
+{ "type": "blacklist" | "clone", "plate": "KA01AB1234", "camera_id": "cam_2",
+  "timestamp": "...", "confidence": 0.85, "reason": "impossible travel time" }

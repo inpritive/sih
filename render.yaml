@@ -1,0 +1,21 @@
+services:
+  # The FastAPI Backend
+  - type: web
+    name: anpr-backend
+    env: docker
+    region: singapore # Change to your preferred region (e.g., frankfurt, ohio)
+    plan: standard # Minimum required for ML libraries like PyTorch/YOLO
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: anpr-postgres
+          property: connectionString
+
+databases:
+  # The PostgreSQL Database
+  - name: anpr-postgres
+    region: singapore
+    plan: free # Can use free tier for the DB
+    databaseName: anpr_db
+    user: anpr

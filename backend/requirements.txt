@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+geoalchemy2
+psycopg2-binary
+alembic
+ultralytics
+easyocr
+paddleocr
+websockets
+python-Levenshtein
+opencv-python
+numpy
+pydantic
