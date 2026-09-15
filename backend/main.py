@@ -7,7 +7,7 @@ app = FastAPI(title="ANPR API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # Since frontend is on Vercel, allow all origins (or specify the vercel URL later)
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -34,6 +34,13 @@ router = APIRouter()
 def create_sighting(sighting: schemas.SightingCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_sighting = crud.create_sighting(db, sighting)
     
+    # Fetch camera location
+    lat, lng = 0.0, 0.0
+    from sqlalchemy import text
+    loc_result = db.execute(text("SELECT ST_Y(location), ST_X(location) FROM cameras WHERE id = :cid"), {"cid": db_sighting.camera_id}).first()
+    if loc_result:
+        lat, lng = loc_result[0], loc_result[1]
+    
     # Check blacklist
     blacklist_match = services.check_blacklist(db, db_sighting.plate)
     if blacklist_match:
@@ -41,6 +48,8 @@ def create_sighting(sighting: schemas.SightingCreate, background_tasks: Backgrou
             "type": "blacklist",
             "plate": db_sighting.plate,
             "camera_id": db_sighting.camera_id,
+            "lat": lat,
+            "lng": lng,
             "timestamp": db_sighting.seen_at.isoformat() + "Z",
             "confidence": db_sighting.confidence,
             "reason": blacklist_match.reason
@@ -54,6 +63,8 @@ def create_sighting(sighting: schemas.SightingCreate, background_tasks: Backgrou
             "type": "clone",
             "plate": db_sighting.plate,
             "camera_id": db_sighting.camera_id,
+            "lat": lat,
+            "lng": lng,
             "timestamp": db_sighting.seen_at.isoformat() + "Z",
             "confidence": clone_match.confidence,
             "reason": clone_match.reason
@@ -62,8 +73,8 @@ def create_sighting(sighting: schemas.SightingCreate, background_tasks: Backgrou
 
     return {
         "camera_id": db_sighting.camera_id,
-        "lat": 0.0, # Will be fixed in Phase 2 for proper response
-        "lng": 0.0,
+        "lat": lat,
+        "lng": lng,
         "timestamp": db_sighting.seen_at,
         "confidence": db_sighting.confidence
     }
