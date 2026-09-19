@@ -20,13 +20,13 @@ const getInitialMockState = () => {
   if (import.meta.env.VITE_USE_MOCK !== undefined) {
     return import.meta.env.VITE_USE_MOCK === 'true';
   }
-  return true; // Default to mock during initial development/demo
+  return false; // Default to mock during initial development/demo
 };
 
 export const config = {
   USE_MOCK: getInitialMockState(),
-  API_BASE_URL: 'https://sih-gvvh.onrender.com',
-  WS_BASE_URL: 'wss://sih-gvvh.onrender.com/alerts',
+  API_BASE_URL: 'https://anpr-backend-4c60.onrender.com',
+  WS_BASE_URL: 'wss://anpr-backend-4c60.onrender.com/alerts',
 };
 
 export const setMockMode = (useMock) => {
