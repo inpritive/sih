@@ -13,7 +13,7 @@ export function CameraFeedsView({ cameras, latestSightings }) {
   // Map each camera ID to its specific video feed URL
   const videoUrls = {
     'cam_1': 'https://res.cloudinary.com/qyxcufjw/video/upload/v1789885380/cam_1.mp4', // MG Road
-    'cam_2': 'https://res.cloudinary.com/qyxcufjw/video/upload/v1789892475/WhatsApp_Video_2026-09-20_at_1.40.21_PM.mp4', // Koramangala
+    'cam_2': 'https://res.cloudinary.com/qyxcufjw/video/upload/v1789916802/WhatsApp_Video_2026-09-20_at_8.36.17_PM.mp4', // Koramangala
     'cam_3': 'https://res.cloudinary.com/qyxcufjw/video/upload/v1789892595/cam4_Indiranagar_1080p_20260920131718.mp4', // Indiranagar
     'cam_4': 'https://res.cloudinary.com/qyxcufjw/video/upload/v1789892763/FInal_Whitefield.mp4' // Whitefield
   };
