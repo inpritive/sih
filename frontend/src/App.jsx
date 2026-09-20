@@ -81,9 +81,7 @@ export function App() {
     alertsWs.init();
 
     const unsubscribe = alertsWs.subscribe((newAlert) => {
-      setAlerts((prev) => [newAlert, ...prev]);
-      
-      // Update latest sighting for the specific camera feed
+      // Always update latest sighting for the specific camera feed
       setLatestSightings((prev) => ({
         ...prev,
         [newAlert.camera_id]: {
@@ -92,6 +90,14 @@ export function App() {
           timestamp: newAlert.timestamp
         }
       }));
+
+      // If it is just a regular sighting, do not trigger alert popups
+      if (newAlert.type === 'sighting') {
+        return;
+      }
+
+      // Handle actual alerts (blacklist/clone)
+      setAlerts((prev) => [newAlert, ...prev]);
 
       // If user is not on alerts tab, increment counter & display floating toast
       if (activeTabRef.current !== 'alerts') {

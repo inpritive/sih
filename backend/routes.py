@@ -40,6 +40,18 @@ def create_sighting(sighting: schemas.SightingCreate, background_tasks: Backgrou
     loc_result = db.execute(text("SELECT ST_Y(location::geometry), ST_X(location::geometry) FROM cameras WHERE id = :cid"), {"cid": db_sighting.camera_id}).first()
     if loc_result:
         lat, lng = loc_result[0], loc_result[1]
+        
+    # Broadcast every sighting to WebSocket to update the frontend camera feeds
+    sighting_ws = {
+        "type": "sighting",
+        "plate": db_sighting.plate,
+        "camera_id": db_sighting.camera_id,
+        "lat": lat,
+        "lng": lng,
+        "timestamp": db_sighting.seen_at.isoformat() + "Z",
+        "confidence": db_sighting.confidence
+    }
+    background_tasks.add_task(manager.broadcast, sighting_ws)
     
     # Check blacklist
     blacklist_match = services.check_blacklist(db, db_sighting.plate)
