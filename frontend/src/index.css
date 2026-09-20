@@ -982,3 +982,172 @@ body {
   color: var(--text-secondary);
   font-family: var(--font-mono);
 }
+
+/* -------------------------------------
+ * Camera Feeds View 
+ * ------------------------------------- */
+.camera-feeds-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.camera-feeds-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.camera-feed-card {
+  position: relative;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.camera-feed-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #18181b;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: #a1a1aa;
+}
+
+.camera-feed-bar .bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-feed-bar .cam-id {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #e4e4e7;
+}
+
+.camera-feed-bar .cam-name {
+  color: #d4d4d8;
+}
+
+.camera-feed-bar.bottom {
+  background: #1f1f22;
+  border-top: 1px solid #333;
+}
+
+.live-status {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.camera-feed-video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  display: flex;
+}
+
+.camera-video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-timestamp {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.camera-feed-overlay-bottom {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.sighting-overlay {
+  background: rgba(16, 23, 38, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-card-glow);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 240, 255, 0.15);
+  animation: slideInAlert 0.3s ease-out;
+}
+
+.sighting-overlay.empty {
+  border-color: var(--border-card);
+  box-shadow: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.sighting-overlay-header {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  color: var(--color-cyan);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sighting-overlay.empty .sighting-overlay-header {
+  color: var(--text-muted);
+}
+
+.sighting-overlay-body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.sighting-plate {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.sighting-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.sighting-confidence {
+  color: var(--color-green);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sighting-time {
+  color: var(--text-secondary);
+}

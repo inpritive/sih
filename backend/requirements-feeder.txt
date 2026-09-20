@@ -3,3 +3,4 @@ easyocr
 paddleocr
 opencv-python
 numpy
+paddlepaddle

@@ -2,11 +2,12 @@ import cv2
 import time
 import requests
 import json
+import os
 from datetime import datetime, timezone
 import argparse
 import random
 from ultralytics import YOLO
-import easyocr
+from paddleocr import PaddleOCR
 
 API_URL = "http://localhost:8000"
 
@@ -28,12 +29,14 @@ def main():
     print(f"Loading YOLO model...")
     yolo_model = YOLO('yolov8n.pt') 
 
-    print(f"Loading EasyOCR...")
-    reader = easyocr.Reader(['en'])
+    print(f"Loading PaddleOCR...")
+    reader = PaddleOCR(use_textline_orientation=True, lang='en')
 
-    cap = cv2.VideoCapture(args.video)
+    video_path = os.path.abspath(args.video)
+    print(f"Trying to open video at absolute path: {video_path}")
+    cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print(f"Error opening video stream or file: {args.video}")
+        print(f"Error opening video stream or file: {video_path}")
         return
 
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -47,10 +50,10 @@ def main():
         if ret == True:
             # Process ~1 frame per second
             if frame_count % int(fps) == 0:
-                print(f"Processing frame {frame_count}...")
+                print(f"Processing frame {frame_count}, shape: {frame.shape}...")
                 
                 # YOLOv8 object detection
-                results = yolo_model(frame, classes=[2, 3, 5, 7]) # car, motorcycle, bus, truck (COCO classes)
+                results = yolo_model(frame, classes=[2, 3, 5, 7], device='cpu') # car, motorcycle, bus, truck (COCO classes)
                 
                 for r in results:
                     boxes = r.boxes
@@ -59,28 +62,38 @@ def main():
                         cls = int(box.cls[0])
                         conf = float(box.conf[0])
                         
+                        print(f"Detected {yolo_model.names[cls]} with conf {conf:.2f} at [{x1}, {y1}, {x2}, {y2}]")
+                        
                         # Extract vehicle image
                         vehicle_img = frame[y1:y2, x1:x2]
                         
                         if vehicle_img.size > 0:
-                            # Use EasyOCR to read plate
-                            ocr_results = reader.readtext(vehicle_img)
-                            for (bbox, text, prob) in ocr_results:
-                                # Very basic filter, assuming text > 4 chars is a plate
-                                if len(text) > 4:
-                                    sighting = {
-                                        "plate": text.upper().replace(" ", ""),
-                                        "camera_id": args.camera_id,
-                                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                                        "confidence": float(prob),
-                                        "vehicle_type": yolo_model.names[cls],
-                                        "color": "unknown" # Color detection requires a separate model/heuristic
-                                    }
-                                    print(f"Sighting detected: {sighting}")
-                                    try:
-                                        requests.post(f"{API_URL}/sighting", json=sighting)
-                                    except Exception as e:
-                                        print(f"Error posting sighting: {e}")
+                            # Upscale image if small
+                            h, w = vehicle_img.shape[:2]
+                            if w < 100:
+                                vehicle_img = cv2.resize(vehicle_img, (w*2, h*2), interpolation=cv2.INTER_CUBIC)
+                                
+                            # Use PaddleOCR to read plate
+                            ocr_results = reader.ocr(vehicle_img, cls=True)
+                            
+                            if ocr_results and ocr_results[0]:
+                                for line in ocr_results[0]:
+                                    bbox, (text, prob) = line
+                                    # Very basic filter, assuming text > 4 chars is a plate
+                                    if len(text) > 4:
+                                        sighting = {
+                                            "plate": text.upper().replace(" ", ""),
+                                            "camera_id": args.camera_id,
+                                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                                            "confidence": float(prob),
+                                            "vehicle_type": yolo_model.names[cls],
+                                            "color": "unknown" # Color detection requires a separate model/heuristic
+                                        }
+                                        print(f"Sighting detected: {sighting}")
+                                        try:
+                                            requests.post(f"{API_URL}/sighting", json=sighting)
+                                        except Exception as e:
+                                            print(f"Error posting sighting: {e}")
 
             frame_count += 1
             

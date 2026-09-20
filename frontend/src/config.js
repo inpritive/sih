@@ -20,7 +20,8 @@ const getInitialMockState = () => {
   if (import.meta.env.VITE_USE_MOCK !== undefined) {
     return import.meta.env.VITE_USE_MOCK === 'true';
   }
-  return false; // Default to mock during initial development/demo
+
+  return false; // Default to real backend for deployment
 };
 
 export const config = {

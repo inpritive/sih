@@ -6,7 +6,8 @@ import {
   Navigation, 
   Bell, 
   Server, 
-  PlusCircle 
+  PlusCircle,
+  Video
 } from 'lucide-react';
 import { config, setMockMode } from '../config';
 import { alertsWs } from '../services/alertsWebSocket';
@@ -78,6 +79,15 @@ export function Header({
         >
           <BarChart3 size={16} />
           <span>Analytics</span>
+        </button>
+
+        <button 
+          id="tab-feeds"
+          className={`nav-tab-btn ${activeTab === 'feeds' ? 'active' : ''}`}
+          onClick={() => setActiveTab('feeds')}
+        >
+          <Video size={16} />
+          <span>Camera Feeds</span>
         </button>
 
         <button 

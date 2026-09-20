@@ -5,14 +5,15 @@ import models
 def seed():
     db = SessionLocal()
     
+    from sqlalchemy import func
     print("Seeding cameras...")
-    # Using WKT (Well-Known Text) for geometry insertion
+    # Using ST_MakePoint(longitude, latitude) for geography insertion
     # Note: PostGIS uses Longitude, Latitude order for POINT(X Y)
     cameras = [
-        models.Camera(id="cam_1", name="MG Road Junction", location="SRID=4326;POINT(77.5946 12.9716)"),
-        models.Camera(id="cam_2", name="Koramangala Sony World", location="SRID=4326;POINT(77.6258 12.9352)"),
-        models.Camera(id="cam_3", name="Indiranagar 100ft", location="SRID=4326;POINT(77.6412 12.9784)"),
-        models.Camera(id="cam_4", name="Whitefield Hope Farm", location="SRID=4326;POINT(77.7470 12.9840)"),
+        models.Camera(id="cam_1", name="MG Road Junction", location=func.ST_SetSRID(func.ST_MakePoint(77.5946, 12.9716), 4326)),
+        models.Camera(id="cam_2", name="Koramangala Sony World", location=func.ST_SetSRID(func.ST_MakePoint(77.6258, 12.9352), 4326)),
+        models.Camera(id="cam_3", name="Indiranagar 100ft", location=func.ST_SetSRID(func.ST_MakePoint(77.6412, 12.9784), 4326)),
+        models.Camera(id="cam_4", name="Whitefield Hope Farm", location=func.ST_SetSRID(func.ST_MakePoint(77.7470, 12.9840), 4326)),
     ]
     
     for cam in cameras:

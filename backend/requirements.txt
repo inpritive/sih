@@ -12,3 +12,4 @@ python-Levenshtein
 opencv-python
 numpy
 pydantic
+paddlepaddle

@@ -37,7 +37,7 @@ def create_sighting(sighting: schemas.SightingCreate, background_tasks: Backgrou
     # Fetch camera location
     lat, lng = 0.0, 0.0
     from sqlalchemy import text
-    loc_result = db.execute(text("SELECT ST_Y(location), ST_X(location) FROM cameras WHERE id = :cid"), {"cid": db_sighting.camera_id}).first()
+    loc_result = db.execute(text("SELECT ST_Y(location::geometry), ST_X(location::geometry) FROM cameras WHERE id = :cid"), {"cid": db_sighting.camera_id}).first()
     if loc_result:
         lat, lng = loc_result[0], loc_result[1]
     

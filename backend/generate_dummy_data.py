@@ -20,22 +20,33 @@ def send_sighting(sighting):
 def seed_sightings():
     cameras = ["cam_1", "cam_2", "cam_3", "cam_4"]
     
-    # 1. Generate a trajectory for a specific vehicle to track
-    target_plate = "KA05XYZ9999"
-    print(f"Generating trajectory for {target_plate}...")
-    base_time = datetime.now(timezone.utc) - timedelta(hours=2)
+    # 1. Generate trajectories for specific vehicles to track
+    target_plates = [
+        {"plate": "KA01AB1234", "type": "car", "color": "white"},
+        {"plate": "DL03CC8899", "type": "truck", "color": "blue"},
+        {"plate": "MH02XY5544", "type": "motorcycle", "color": "black"},
+        {"plate": "KA05MJ4411", "type": "car", "color": "silver"}
+    ]
     
-    for i, cam_id in enumerate(cameras):
-        sighting_time = base_time + timedelta(minutes=i*15)
-        s = {
-            "plate": target_plate,
-            "camera_id": cam_id,
-            "timestamp": sighting_time.isoformat(),
-            "confidence": 0.98,
-            "vehicle_type": "car",
-            "color": "silver"
-        }
-        send_sighting(s)
+    for target in target_plates:
+        print(f"Generating trajectory for {target['plate']}...")
+        base_time = datetime.now(timezone.utc) - timedelta(hours=2)
+        
+        # Shuffle cameras so trajectories aren't all identical
+        traj_cameras = cameras.copy()
+        random.shuffle(traj_cameras)
+        
+        for i, cam_id in enumerate(traj_cameras):
+            sighting_time = base_time + timedelta(minutes=i*15)
+            s = {
+                "plate": target['plate'],
+                "camera_id": cam_id,
+                "timestamp": sighting_time.isoformat(),
+                "confidence": round(random.uniform(0.85, 0.99), 2),
+                "vehicle_type": target['type'],
+                "color": target['color']
+            }
+            send_sighting(s)
         
     # 2. Generate random background traffic
     print("Generating background traffic for analytics (this will take a few seconds)...")

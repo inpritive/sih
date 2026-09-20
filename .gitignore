@@ -6,3 +6,8 @@ dist/
 .env.local
 .DS_Store
 *.log
+
+venv/
+backend/venv/
+__pycache__/
+*.pyc

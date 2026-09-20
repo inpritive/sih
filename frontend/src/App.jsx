@@ -5,6 +5,7 @@ import { TrajectorySearch } from './components/TrajectorySearch';
 import { AnalyticsView } from './components/AnalyticsView';
 import { AlertsPanel } from './components/AlertsPanel';
 import { BlacklistModal } from './components/BlacklistModal';
+import { CameraFeedsView } from './components/CameraFeedsView';
 import { api } from './services/api';
 import { alertsWs } from './services/alertsWebSocket';
 import { ShieldAlert, Copy, X } from 'lucide-react';
@@ -28,6 +29,9 @@ export function App() {
   const [alerts, setAlerts] = useState([]);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [latestFloatingAlert, setLatestFloatingAlert] = useState(null);
+  
+  // Camera Feeds State
+  const [latestSightings, setLatestSightings] = useState({});
 
   // Modal State
   const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
@@ -78,6 +82,16 @@ export function App() {
 
     const unsubscribe = alertsWs.subscribe((newAlert) => {
       setAlerts((prev) => [newAlert, ...prev]);
+      
+      // Update latest sighting for the specific camera feed
+      setLatestSightings((prev) => ({
+        ...prev,
+        [newAlert.camera_id]: {
+          plate: newAlert.plate,
+          confidence: newAlert.confidence,
+          timestamp: newAlert.timestamp
+        }
+      }));
 
       // If user is not on alerts tab, increment counter & display floating toast
       if (activeTabRef.current !== 'alerts') {
@@ -246,6 +260,12 @@ export function App() {
             onClearAlerts={() => setAlerts([])}
             cameras={cameras}
           />
+        )}
+
+        {activeTab === 'feeds' && (
+          <div className="side-panel" style={{ width: '100%' }}>
+            <CameraFeedsView cameras={cameras} latestSightings={latestSightings} />
+          </div>
         )}
       </div>
 

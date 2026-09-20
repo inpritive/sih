@@ -1,14 +1,15 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemas
+from geoalchemy2 import Geometry
 import geoalchemy2.functions as geofunc
 
 def get_cameras(db: Session):
     results = db.query(
         models.Camera.id,
         models.Camera.name,
-        geofunc.ST_Y(models.Camera.location).label('lat'),
-        geofunc.ST_X(models.Camera.location).label('lng')
+        geofunc.ST_Y(models.Camera.location.cast(Geometry)).label('lat'),
+        geofunc.ST_X(models.Camera.location.cast(Geometry)).label('lng')
     ).all()
     return [{"id": r.id, "name": r.name, "lat": r.lat, "lng": r.lng} for r in results]
 
@@ -29,8 +30,8 @@ def create_sighting(db: Session, sighting: schemas.SightingCreate):
 def get_trajectory(db: Session, plate: str):
     results = db.query(
         models.Sighting.camera_id,
-        geofunc.ST_Y(models.Camera.location).label('lat'),
-        geofunc.ST_X(models.Camera.location).label('lng'),
+        geofunc.ST_Y(models.Camera.location.cast(Geometry)).label('lat'),
+        geofunc.ST_X(models.Camera.location.cast(Geometry)).label('lng'),
         models.Sighting.seen_at,
         models.Sighting.confidence
     ).join(models.Camera, models.Sighting.camera_id == models.Camera.id) \

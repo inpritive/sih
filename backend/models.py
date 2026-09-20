@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geography
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -9,7 +9,7 @@ class Camera(Base):
     __tablename__ = "cameras"
     id = Column(String, primary_key=True, index=True)
     name = Column(String)
-    location = Column(Geometry(geometry_type='POINT', srid=4326))
+    location = Column(Geography(geometry_type='POINT', srid=4326))
 
 class Sighting(Base):
     __tablename__ = "sightings"
