@@ -24,10 +24,12 @@ const getInitialMockState = () => {
   return false; // Default to real backend for deployment
 };
 
+const IS_DEV = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 export const config = {
   USE_MOCK: getInitialMockState(),
-  API_BASE_URL: 'https://anpr-backend-4c60.onrender.com',
-  WS_BASE_URL: 'wss://anpr-backend-4c60.onrender.com/alerts',
+  API_BASE_URL: IS_DEV ? 'http://127.0.0.1:8000' : 'https://anpr-backend-4c60.onrender.com',
+  WS_BASE_URL: IS_DEV ? 'ws://127.0.0.1:8000/alerts' : 'wss://anpr-backend-4c60.onrender.com/alerts',
 };
 
 export const setMockMode = (useMock) => {

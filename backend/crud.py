@@ -50,7 +50,6 @@ def get_trajectory(db: Session, plate: str):
     ]
 
 def get_analytics_summary(db: Session):
-    # Dummy implementation for Phase 1 structure. Will enhance in Phase 2.
     camera_counts = db.query(
         models.Sighting.camera_id, 
         func.count(models.Sighting.id).label('count')
@@ -58,10 +57,32 @@ def get_analytics_summary(db: Session):
     
     counts_dict = {r.camera_id: r.count for r in camera_counts}
     
+    # Calculate simple density grid & congestion score based on counts
+    density_grid = []
+    congestion_score = {}
+    
+    # Let's get camera locations for density grid
+    cameras = db.query(
+        models.Camera.id,
+        geofunc.ST_Y(models.Camera.location.cast(Geometry)).label('lat'),
+        geofunc.ST_X(models.Camera.location.cast(Geometry)).label('lng')
+    ).all()
+    
+    for cam in cameras:
+        count = counts_dict.get(cam.id, 0)
+        density_grid.append({
+            "lat": cam.lat,
+            "lng": cam.lng,
+            "count": count
+        })
+        # Score from 0.0 to 1.0 based on count (say 10 vehicles is 1.0 score)
+        score = min(1.0, count * 0.1)
+        congestion_score[cam.id] = score
+        
     return {
         "vehicle_counts_by_camera": counts_dict,
-        "density_grid": [],
-        "congestion_score": {}
+        "density_grid": density_grid,
+        "congestion_score": congestion_score
     }
 
 def create_blacklist(db: Session, blacklist_item: schemas.BlacklistCreate):

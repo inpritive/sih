@@ -37,6 +37,8 @@ def check_clone(db: Session, new_sighting: models.Sighting):
             )
         ).scalar()
         
+        print(f"DEBUG distance_meters={distance_meters}")
+        
         if distance_meters is None:
             continue
             
@@ -47,28 +49,37 @@ def check_clone(db: Session, new_sighting: models.Sighting):
         speed_m_s = distance_meters / time_diff_seconds
         speed_km_h = speed_m_s * 3.6
         
-        if speed_km_h > 120.0: # threshold with buffer
-            confidence = min(0.99, 0.5 + (speed_km_h - 120) / 200) 
+        is_impossible_speed = speed_km_h > 120.0
+        is_type_mismatch = new_sighting.vehicle_type and prev_sighting.vehicle_type and (new_sighting.vehicle_type != prev_sighting.vehicle_type)
+        is_color_mismatch = new_sighting.color and prev_sighting.color and (new_sighting.color != prev_sighting.color)
+        
+        if is_impossible_speed or is_type_mismatch or is_color_mismatch:
+            confidence = 0.5
+            reasons = []
             
-            reason = "impossible travel time"
+            if is_impossible_speed:
+                confidence = min(0.99, confidence + (speed_km_h - 120) / 200)
+                reasons.append("impossible travel time")
             
-            if new_sighting.vehicle_type != prev_sighting.vehicle_type:
-                confidence = min(0.99, confidence + 0.1)
-                reason += ", type mismatch"
-            if new_sighting.color != prev_sighting.color:
-                confidence = min(0.99, confidence + 0.1)
-                reason += ", color mismatch"
+            if is_type_mismatch:
+                confidence = min(0.99, confidence + 0.3)
+                reasons.append("type mismatch")
+                
+            if is_color_mismatch:
+                confidence = min(0.99, confidence + 0.2)
+                reasons.append("color mismatch")
                 
             clone_alert = models.CloneAlert(
                 plate=new_sighting.plate,
                 sighting_id_1=prev_sighting.id,
                 sighting_id_2=new_sighting.id,
                 confidence=confidence,
-                reason=reason
+                reason=", ".join(reasons)
             )
             db.add(clone_alert)
             db.commit()
             db.refresh(clone_alert)
             return clone_alert
-            
+    
+    print(f"DEBUG: returning None for plate {new_sighting.plate}. previous_sightings len={len(previous_sightings)}")
     return None

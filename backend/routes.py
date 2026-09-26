@@ -129,5 +129,11 @@ def initialize_database():
         return {"status": "success", "message": "Database initialized and seeded"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-        
 
+@router.delete("/test/teardown")
+def teardown(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    db.execute(text("DELETE FROM blacklist WHERE plate IN ('E2EBAD')"))
+    db.execute(text("DELETE FROM sightings WHERE plate IN ('TESTPLATE', 'TESTANALYTICS', 'E2EBAD', 'FEED123')"))
+    db.commit()
+    return {"message": "Teardown complete"}

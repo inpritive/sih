@@ -16,7 +16,7 @@ export function MapView({
   const trajectoryLayerRef = useRef(L.layerGroup());
   const densityLayerRef = useRef(L.layerGroup());
 
-  const [showDensity, setShowDensity] = useState(true);
+  const [showDensity, setShowDensity] = useState(false);
 
   // 1. Initialize Leaflet Map
   useEffect(() => {
@@ -50,6 +50,14 @@ export function MapView({
       mapInstanceRef.current = null;
     };
   }, []);
+
+  // Fit camera bounds when cameras load
+  useEffect(() => {
+    if (!mapInstanceRef.current || !cameras.length) return;
+    if (trajectory?.sightings?.length) return;
+    const bounds = L.latLngBounds(cameras.map((c) => [c.lat, c.lng]));
+    mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+  }, [cameras]);
 
   // 2. Render Cameras (Fixed markers on map at all times)
   useEffect(() => {
@@ -119,16 +127,16 @@ export function MapView({
     if (!showDensity || !analytics?.density_grid?.length) return;
 
     analytics.density_grid.forEach((point) => {
-      // Radius and color gradient based on count
-      const intensity = Math.min(1, point.count / 80);
+      // Subtle radar aura around camera hotspot
+      const intensity = Math.min(1, (point.count || 0) / 80);
       const color = intensity > 0.65 ? '#ef4444' : intensity > 0.4 ? '#f59e0b' : '#38bdf8';
 
       const circle = L.circle([point.lat, point.lng], {
-        radius: 450 + point.count * 8,
+        radius: 350,
         color: color,
-        weight: 1,
+        weight: 1.5,
         fillColor: color,
-        fillOpacity: 0.18 + intensity * 0.25,
+        fillOpacity: 0.15,
       });
 
       circle.bindTooltip(`Density Zone: ${point.count} vehicles`, {
@@ -183,7 +191,7 @@ export function MapView({
     sorted.forEach((sighting, idx) => {
       const cameraObj = cameras.find((c) => c.id === sighting.camera_id);
       const camName = cameraObj ? cameraObj.name : `Camera ${sighting.camera_id}`;
-      const timeStr = new Date(sighting.timestamp).toLocaleString();
+      const timeStr = new Date(sighting.timestamp).toLocaleTimeString();
       const confidencePercent = Math.round(sighting.confidence * 100);
 
       const nodeIcon = L.divIcon({
@@ -210,13 +218,18 @@ export function MapView({
       layer.addLayer(nodeMarker);
     });
 
-    // Zoom map to fit trajectory
+    // Zoom map to fit trajectory safely
     if (latlngs.length > 0) {
-      mapInstanceRef.current.fitBounds(L.latLngBounds(latlngs), {
-        padding: [60, 60],
-        maxZoom: 14,
-        animate: true,
-      });
+      const bounds = L.latLngBounds(latlngs);
+      if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
+        mapInstanceRef.current.setView(bounds.getCenter(), 13);
+      } else {
+        mapInstanceRef.current.fitBounds(bounds, {
+          padding: [70, 70],
+          maxZoom: 14,
+          animate: true,
+        });
+      }
     }
   }, [trajectory, cameras]);
 

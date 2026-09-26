@@ -11,10 +11,10 @@ export function TrajectorySearch({
   const [inputPlate, setInputPlate] = useState('');
 
   const quickPlates = [
+    { plate: 'DEMOCA01', desc: 'Demo Track 1' },
+    { plate: 'DEMOCA02', desc: 'Demo Track 2' },
     { plate: 'KA01AB1234', desc: 'Standard Journey' },
-    { plate: 'DL03CC8899', desc: 'Clone Anomaly' },
-    { plate: 'MH02XY5544', desc: 'Blacklisted' },
-    { plate: 'KA05MJ4411', desc: 'South Sector' }
+    { plate: 'DL03CC8899', desc: 'Clone Anomaly' }
   ];
 
   const handleSubmit = (e) => {

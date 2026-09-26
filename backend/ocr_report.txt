@@ -1,0 +1,6 @@
+Overall Accuracy: 16.00%
+normal: 20.00%
+low-light: 20.00%
+blurred: 20.00%
+angled: 0.00%
+dirty: 20.00%

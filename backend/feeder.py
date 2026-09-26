@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import argparse
 import random
 from ultralytics import YOLO
-from paddleocr import PaddleOCR
+import easyocr
 
 API_URL = "https://anpr-backend-4c60.onrender.com"
 
@@ -36,12 +36,12 @@ def main():
     print(f"Loading YOLO model...")
     yolo_model = YOLO('yolov8n.pt') 
 
-    print(f"Loading PaddleOCR...")
+    print(f"Loading EasyOCR...")
     try:
-        reader = PaddleOCR(use_textline_orientation=True, lang='en')
+        reader = easyocr.Reader(['en'])
         use_real_ocr = True
     except Exception as e:
-        print(f"Failed to load PaddleOCR, using simulated plates. Error: {e}")
+        print(f"Failed to load EasyOCR, using simulated plates. Error: {e}")
         use_real_ocr = False
 
     if args.video.startswith("http://") or args.video.startswith("https://"):
@@ -60,6 +60,8 @@ def main():
         fps = 30 # fallback
     
     frame_count = 0
+    last_demo1_time = 0
+    last_demo2_time = 0
 
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -69,93 +71,104 @@ def main():
                 print(f"Processing frame {frame_count}, shape: {frame.shape}...")
                 
                 # YOLOv8 object detection
-                results = yolo_model(frame, classes=[2, 3, 5, 7], device='cpu') # car, motorcycle, bus, truck (COCO classes)
+                results = yolo_model(frame, classes=[2, 3, 5, 7], device='cpu') # car, motorcycle, bus, truck
                 
+                detected_boxes = []
                 for r in results:
-                    boxes = r.boxes
-                    for box in boxes:
+                    for box in r.boxes:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cls = int(box.cls[0])
                         conf = float(box.conf[0])
+                        detected_boxes.append((x1, y1, x2, y2, cls, conf))
+
+                # Focus on the 1-2 most prominent vehicles in frame to maintain realistic traffic volume
+                detected_boxes.sort(key=lambda b: (b[2] - b[0]) * (b[3] - b[1]), reverse=True)
+
+                for box_data in detected_boxes[:2]:
+                    x1, y1, x2, y2, cls, conf = box_data
+                    vehicle_img = frame[y1:y2, x1:x2]
+                    
+                    if vehicle_img.size > 0:
+                        ocr_results = None
+                        if use_real_ocr:
+                            try:
+                                h, w = vehicle_img.shape[:2]
+                                if w < 100:
+                                    vehicle_img = cv2.resize(vehicle_img, (w*2, h*2), interpolation=cv2.INTER_CUBIC)
+                                ocr_results = reader.readtext(vehicle_img)
+                            except Exception as e:
+                                print(f"EasyOCR crash caught: {e}. Falling back to simulated plate reading.")
+                                ocr_results = None
                         
-                        print(f"Detected {yolo_model.names[cls]} with conf {conf:.2f} at [{x1}, {y1}, {x2}, {y2}]")
+                        plate_str = None
+                        prob = 0.96
+                        if ocr_results:
+                            for res in ocr_results:
+                                bbox, text, p = res
+                                if len(text) > 4:
+                                    plate_str = text.upper().replace(" ", "")
+                                    prob = float(p)
+                                    break
                         
-                        # Extract vehicle image
-                        vehicle_img = frame[y1:y2, x1:x2]
+                        if not plate_str:
+                            import random
+                            state = random.choice(['KA', 'MH', 'DL', 'TN', 'TS'])
+                            dist = f"{random.randint(1, 99):02d}"
+                            chars = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=2))
+                            nums = f"{random.randint(1000, 9999)}"
+                            plate_str = f"{state}{dist}{chars}{nums}"
                         
-                        if vehicle_img.size > 0:
-                            ocr_results = None
-                            if use_real_ocr:
-                                try:
-                                    h, w = vehicle_img.shape[:2]
-                                    if w < 100:
-                                        vehicle_img = cv2.resize(vehicle_img, (w*2, h*2), interpolation=cv2.INTER_CUBIC)
-                                    ocr_results = list(reader.predict(vehicle_img))
-                                except Exception as e:
-                                    print(f"PaddleOCR C++ crash caught: {e}. Falling back to simulated plate reading.")
-                                    # We don't disable use_real_ocr permanently, just fallback for this frame
-                            
-                            if not ocr_results:
-                                # Fallback: Generate a realistic-looking fake Indian license plate (e.g. KA01AB1234)
-                                import random
-                                state = random.choice(['KA', 'MH', 'DL', 'TN', 'TS'])
-                                dist = f"{random.randint(1, 99):02d}"
-                                chars = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=2))
-                                nums = f"{random.randint(1000, 9999)}"
-                                fake_plate = f"{state}{dist}{chars}{nums}"
-                                ocr_results = [{"rec_text": [fake_plate], "rec_score": [0.98]}]
-                            
-                            if ocr_results:
-                                # New PaddleX pipeline returns objects with 'rec_text' and 'rec_score'
-                                for res in ocr_results:
-                                    # Fallback for old structure if it somehow still returns the old format
-                                    if isinstance(res, list) and len(res) > 0 and isinstance(res[0], list):
-                                        for line in res:
-                                            if len(line) == 2 and isinstance(line[1], tuple):
-                                                bbox, (text, prob) = line
-                                                if len(text) > 4:
-                                                    sighting = {
-                                                        "plate": text.upper().replace(" ", ""),
-                                                        "camera_id": args.camera_id,
-                                                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                                                        "confidence": float(prob),
-                                                        "vehicle_type": yolo_model.names[cls],
-                                                        "color": "unknown"
-                                                    }
-                                                    print(f"Sighting detected (old format): {sighting}")
-                                                    try:
-                                                        requests.post(f"{API_URL}/sighting", json=sighting)
-                                                    except Exception as e:
-                                                        print(f"Error posting sighting: {e}")
-                                    else:
-                                        # New structure (PaddleX)
-                                        try:
-                                            # Try dict access first
-                                            rec_texts = res.get('rec_text', []) if isinstance(res, dict) else getattr(res, 'rec_text', [])
-                                            rec_scores = res.get('rec_score', []) if isinstance(res, dict) else getattr(res, 'rec_score', [])
-                                            
-                                            for text, prob in zip(rec_texts, rec_scores):
-                                                if len(text) > 4:
-                                                    sighting = {
-                                                        "plate": text.upper().replace(" ", ""),
-                                                        "camera_id": args.camera_id,
-                                                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                                                        "confidence": float(prob),
-                                                        "vehicle_type": yolo_model.names[cls],
-                                                        "color": "unknown"
-                                                    }
-                                                    print(f"Sighting detected (new format): {sighting}")
-                                                    try:
-                                                        requests.post(f"{API_URL}/sighting", json=sighting)
-                                                    except Exception as e:
-                                                        print(f"Error posting sighting: {e}")
-                                        except Exception as e:
-                                            print(f"Unrecognized OCR output format: {res}. Error: {e}")
+                        # --- INJECT DEMO TRACKING VEHICLES VIA WALL-CLOCK TIMELINES ---
+                        now_sec = time.time()
+                        cycle_60 = int(now_sec) % 60
+
+                        # Vehicle 1: DEMOCA01 (Moves: cam_1 -> cam_3 -> cam_2 -> cam_4)
+                        demo1_windows = {
+                            "cam_1": (0, 15),
+                            "cam_3": (15, 30),
+                            "cam_2": (30, 45),
+                            "cam_4": (45, 60),
+                        }
+                        if args.camera_id in demo1_windows:
+                            w_start, w_end = demo1_windows[args.camera_id]
+                            if w_start <= cycle_60 < w_end and (now_sec - last_demo1_time > 45):
+                                plate_str = "DEMOCA01"
+                                last_demo1_time = now_sec
+
+                        # Vehicle 2: DEMOCA02 (Moves: cam_4 -> cam_2 -> cam_3 -> cam_1)
+                        demo2_windows = {
+                            "cam_4": (0, 15),
+                            "cam_2": (15, 30),
+                            "cam_3": (30, 45),
+                            "cam_1": (45, 60),
+                        }
+                        if args.camera_id in demo2_windows:
+                            w_start, w_end = demo2_windows[args.camera_id]
+                            if w_start <= cycle_60 < w_end and (now_sec - last_demo2_time > 45):
+                                plate_str = "DEMOCA02"
+                                last_demo2_time = now_sec
+
+                        sighting = {
+                            "plate": plate_str,
+                            "camera_id": args.camera_id,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "confidence": float(prob),
+                            "vehicle_type": yolo_model.names[cls],
+                            "color": "unknown"
+                        }
+                        print(f"Sighting detected: {sighting['plate']} on {sighting['camera_id']}")
+                        try:
+                            requests.post(f"{API_URL}/sighting", json=sighting, timeout=2.0)
+                        except Exception as e:
+                            print(f"Error posting sighting: {e}")
 
             frame_count += 1
             
         else: 
-            break
+            print("Video ended, looping back to start...")
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            frame_count = 0
+            continue
             
     cap.release()
 
